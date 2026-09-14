@@ -1,0 +1,55 @@
+﻿@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Sora:wght@500;600;700&display=swap');
+@import "tailwindcss";
+@theme {
+  --color-background: #F3F0E8;
+  --color-surface: #FFFDF8;
+  --color-secondary-surface: #E8E5DC;
+  --color-elevated: #FFFFFF;
+  --color-graphite: #202624;
+  --color-secondary-text: #626B67;
+  --color-muted: #858D89;
+  --color-sidebar: #1D2925;
+  --color-sidebar-surface: #283731;
+  --color-on-dark: #F7F4EC;
+  --color-forest: #365F50;
+  --color-forest-hover: #2A4D41;
+  --color-forest-active: #213D34;
+  --color-forest-tint: #DCE8E2;
+  --color-copper: #B85732;
+  --color-copper-hover: #984528;
+  --color-copper-tint: #F3DFD5;
+  --color-ochre: #B7862E;
+  --color-border: #D6D1C6;
+  --color-strong-border: #AAA89F;
+  --color-focus: #4B7667;
+  --color-success: #39724D;
+  --color-success-background: #E2EFE6;
+  --color-warning: #9C6B1B;
+  --color-warning-background: #F6E9CF;
+  --color-danger: #A43F3F;
+  --color-danger-background: #F5DFDD;
+  --color-information: #596B73;
+  --color-information-background: #E5EAEC;
+  --font-sans: 'DM Sans', sans-serif;
+  --font-heading: 'Sora', sans-serif;
+}
+:root { font-family: var(--font-sans); color: var(--color-graphite); background: var(--color-background); font-synthesis: none; --surface: #FFFDF8; font-size: 14px; }
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 320px; }
+button, input, select, textarea { font: inherit; }
+button, a, summary { -webkit-tap-highlight-color: transparent; }
+button { cursor: pointer; }
+button:disabled { opacity: .45; cursor: not-allowed; }
+button, a, input, select, textarea, summary { outline-offset: 3px; }
+:focus-visible { outline: 2px solid var(--color-focus); }
+input, select, textarea { max-width: 100%; }
+input[type=checkbox], input[type=radio] { accent-color: var(--color-forest); }
+h1, h2, h3, h4, .button, .brand, nav { font-family: var(--font-heading); }
+h1,h2,h3,p { margin: 0; }
+h1 { font-size: clamp(24px, 2.05vw, 31px); font-weight: 600; line-height: 1.35; letter-spacing: -1.1px; }
+h2 { font-size: 18px; font-weight: 600; letter-spacing: -.45px; line-height: 1.5; }
+h3 { font-size: 14px; font-weight: 600; }
+p { line-height: 1.65; }
+svg { flex-shrink: 0; }
+::selection { background: var(--color-forest-tint); }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation: none !important; transition: none !important; } }
