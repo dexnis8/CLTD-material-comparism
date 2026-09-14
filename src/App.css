@@ -5,3 +5,21 @@
 @media(max-width:800px){.sidebar{display:none}.workspace{margin-left:0;width:100%}.mobile-menu{display:inline-flex}.topbar{padding:0 20px;height:62px}.breadcrumb{gap:8px}.page-heading h1{font-size:27px}.method-card{flex-direction:row}.method-formula{border-top:0;border-left:1px solid #c8c7bb;padding:15px 0 15px 22px}.sidebar-study{display:none}}
 @media(max-width:550px){main{padding:24px 16px 0}.page-heading{flex-direction:column;gap:18px}.page-heading h1{font-size:27px;max-width:350px}.page-heading .eyebrow{font-size:8px;letter-spacing:1px}.run-button{width:100%}.topbar{padding:0 12px}.breadcrumb>span,.breadcrumb>svg{display:none}.save-status{font-size:9px;gap:4px}.dataset-banner{padding:8px 12px;gap:8px}.dataset-banner-name{display:none}.dataset-banner button{font-size:10px;gap:4px}.demo-warning{font-size:10px;padding:10px 12px;align-items:flex-start}.project-strip{align-items:flex-start;gap:5px}.project-strip h2{font-size:14px}.project-strip .button{font-size:9px;padding:8px}.shared-panel .form-section{display:flex}.shared-panel .field-grid{display:grid;grid-template-columns:1fr 1fr;width:100%}.shared-panel .form-section>.field{width:100%}.panel-heading{padding:20px 18px 0;flex-wrap:wrap}.panel-heading h2{font-size:14px}.panel-intro{padding-left:18px;padding-right:18px}.form-section{margin:0 18px}.method-card{flex-direction:column;padding:22px}.method-formula{border-left:0;border-top:1px solid #c8c7bb;padding:20px 0 0}.ready-panel{padding:22px}.workspace-footer{flex-direction:column;gap:8px}.result-hero{flex-direction:column;gap:23px}.hero-support{border-left:0;border-top:1px solid #b9c9b9;padding:20px 0 0}.result-hero .eyebrow{font-size:8px}.hero-number{font-size:42px}.section-title{padding:20px 18px;flex-wrap:wrap}.section-title h2{font-size:15px}.audit-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:20px 14px}.audit-grid dd{font-size:12px}.table-toolbar{flex-wrap:wrap;padding:0 18px 20px}.search-input{flex-basis:100%}.page-intro{align-items:flex-start;flex-direction:column}.page-intro h2{font-size:19px}.modal-body{padding:20px}.modal-head,.modal-footer{padding:15px 20px}.modal-head h2{font-size:17px}.formula-box{padding:15px;font-size:11px}.modal .field-grid{grid-template-columns:1fr}.inline-select{flex-wrap:wrap}.row-actions .button{width:44px}.baseline-choice{min-height:44px}}
 @media print{:root{font-size:11px;background:white;color:black}.no-print,.sidebar,.topbar,.page-heading,.workspace-footer{display:none!important}.workspace{width:100%;margin:0}main{padding:0;max-width:none}.panel,.result-hero,.dataset-banner,.demo-warning,.notice{break-inside:avoid;box-shadow:none;print-color-adjust:exact;-webkit-print-color-adjust:exact}.results-content{gap:16px}.result-charts{grid-template-columns:1fr}.table-scroll{overflow:visible}table{font-size:8px;table-layout:auto}td,th{padding:6px 4px;white-space:normal;overflow-wrap:anywhere}th{font-size:8px}.result-hero{padding:20px}.section-title{padding:15px}.hourly-details{break-inside:avoid}.hourly-details::details-content{content-visibility:visible;display:block}.assumptions p,.assumptions ul{font-size:10px}.line-chart{max-height:220px}.dataset-banner-name{display:inline}.chart-legend button{pointer-events:none}@page{margin:12mm;size:landscape}}
+
+.user-guide{display:grid;gap:24px;max-width:960px}
+.guide-intro,.guide-body{padding:24px}
+.guide-intro h2{font-size:26px;margin:10px 0 16px}
+.user-guide p,.guide-definitions dd{line-height:1.75;max-width:76ch}
+.user-guide p{margin:0 0 16px}
+.guide-body{padding-top:0}
+.guide-steps{margin:0;padding:0 28px 24px 48px;list-style:decimal}
+.guide-steps li{padding-left:8px;margin-bottom:24px}
+.guide-steps li:last-child{margin-bottom:0}
+.guide-steps h3{font-size:16px;margin:0 0 8px}
+.guide-definitions{margin:0}
+.guide-definitions>div{margin-bottom:22px}
+.guide-definitions dt{font-weight:650;margin-bottom:6px}
+.guide-definitions dd{margin:0;color:var(--color-secondary-text)}
+.user-guide .formula-box{margin-bottom:20px}
+.user-guide .formula-box p{margin:12px 0 0}
+@media(max-width:550px){.guide-intro,.guide-body{padding:18px}.guide-body{padding-top:0}.guide-steps{padding-left:36px;padding-right:18px}.guide-intro h2{font-size:22px}}

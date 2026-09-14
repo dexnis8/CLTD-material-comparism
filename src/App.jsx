@@ -11,6 +11,7 @@ import SharedConditions from './features/comparison/SharedConditions'
 import Materials from './features/materials/Materials'
 import Results from './features/comparison/Results'
 import ReferenceData from './features/reference-data/ReferenceData'
+import UserGuide from './features/guide/UserGuide'
 import './App.css'
 
 const navigation = [
@@ -19,6 +20,7 @@ const navigation = [
   { id: 'results', label: 'Results', icon: ChartNoAxesCombined, number: '03' },
   { id: 'reference', label: 'Reference data', icon: Database },
   { id: 'reports', label: 'Reports', icon: FileText },
+  { id: 'guide', label: 'User guide', icon: BookOpen },
   { id: 'settings', label: 'Settings', icon: Settings2 },
 ]
 export default function App() {
@@ -63,6 +65,7 @@ export default function App() {
       {errors.length > 0 && <div className="notice error validation-errors" role="alert"><div><strong>Resolve {errors.length} issue{errors.length === 1 ? '' : 's'} to continue</strong><ul>{errors.map((error, i) => <li key={`${error}-${i}`}>{error}</li>)}</ul></div><Button variant="icon-button ghost" aria-label="Dismiss errors" onClick={() => setErrors([])}><X size={17} /></Button></div>}
       {message && <div className="notice success" role="status">{message}</div>}
       {page === 'setup' && <><div className="project-strip"><div><span className="eyebrow">Current project</span><h2>{project.name}</h2></div><Button variant="ghost" onClick={() => navigate('settings')}>Project details <ChevronRight size={16} /></Button></div><div className="setup-grid"><SharedConditions shared={project.shared} onChange={updateShared} onUnits={unit => setProject(changeProjectUnits(project, unit))} /><div className="setup-main"><Materials materials={project.materials} unitSystem={project.shared.unitSystem} hasResults={Boolean(project.calculation)} onChange={updateMaterials} /><section className="method-card"><div className="method-copy"><span className="eyebrow">A transparent calculation</span><h2>From assembly to hourly load.</h2><p>Each reference profile is corrected for your design conditions, then multiplied by U-value and the shared surface area.</p><button className="text-link" onClick={() => setShowMethod(true)}>Explore the calculation method <ArrowUpRight size={15} /></button></div><div className="method-formula"><span>Conduction cooling load</span><strong>Q = U × A × CLTD<sub>c</sub></strong><div><span>Assembly</span><span>Shared area</span><span>Corrected profile</span></div></div></section><section className="ready-panel"><div><span className="eyebrow">03 / Compare the outcome</span><h2>The peak is only half the story.</h2><p>See how much heat passes through each assembly — and when. Run your comparison to reveal the hourly profiles, ranked peaks and full calculation audit.</p></div><Button variant="primary" onClick={run}>Run comparison <ChevronRight size={16} /></Button>{project.calculation && <Button onClick={() => navigate('results')}>View {stale ? 'previous' : 'current'} results</Button>}</section><div className="scope-note"><BookOpen size={18} /><p><strong>Focused by design.</strong> This tool compares conduction through a single opaque wall or roof. It does not calculate the total building cooling load.</p></div></div></div></>}
+      {page === 'guide' && <UserGuide onNavigate={navigate} />}
       {page === 'materials' && <Materials materials={project.materials} unitSystem={project.shared.unitSystem} hasResults={Boolean(project.calculation)} onChange={updateMaterials} />}
       {['results', 'reports'].includes(page) && <Results calculation={project.calculation} stale={stale} onRun={run} report={page === 'reports'} projectName={project.name} />}
       {page === 'reference' && <ReferenceData project={project} onChange={setProject} onError={error => { setErrors([error]); window.scrollTo(0, 0) }} />}

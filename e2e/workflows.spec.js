@@ -100,7 +100,7 @@ for (const width of [1440, 1024, 768, 390]) {
     await page.setViewportSize({ width, height: 1000 })
     await page.goto('/')
     await page.getByRole('button', { name: 'Run comparison', exact: true }).first().click()
-    for (const label of ['Comparison setup', 'Materials', 'Results', 'Reference data', 'Reports', 'Settings']) {
+    for (const label of ['Comparison setup', 'Materials', 'Results', 'Reference data', 'Reports', 'User guide', 'Settings']) {
       await navigate(page, label)
       await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)
