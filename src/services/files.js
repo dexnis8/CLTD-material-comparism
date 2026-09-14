@@ -1,7 +1,7 @@
 import { DEMO_WARNING, SCHEMA_VERSION } from '../app/config'
 import { compareMaterials } from '../domain/calculations'
 import { parseStrictJSON, referenceRows, validateDataset } from '../domain/reference'
-import { UNITS } from '../domain/units'
+import { UNITS, LOAD_UNITS, resultsInLoadUnit } from '../domain/units'
 import { demoDataset } from '../data/demo'
 
 export function download(name, text, type = 'application/json') {
@@ -109,8 +109,8 @@ export function readProject(text) {
   }
   return project
 }
-export function reportCSV(calculation, hourly = false) {
-  const c = calculation, unit = UNITS[c.sharedConditions.unitSystem]
+export function reportCSV(calculation, hourly = false, loadUnit = 'kW') {
+  const c = { ...calculation, results: resultsInLoadUnit(calculation, loadUnit) }, unit = { ...UNITS[c.sharedConditions.unitSystem], load: LOAD_UNITS[loadUnit] }
   const context = ['Dataset', 'Source', 'Edition', 'Version', 'Warning', 'Calculated at', 'Surface', `Area (${unit.area})`, 'Orientation', 'Latitude', 'Month', 'Start hour', 'End hour', `Indoor (${unit.temperature})`, `Outdoor design (${unit.temperature})`, `Daily range (${unit.difference})`, `Outdoor average (${unit.temperature})`, 'Negative handling', 'Baseline ID', 'Assumptions']
   const values = [c.referenceDataset.metadata.name, c.referenceDataset.metadata.source, c.referenceDataset.metadata.edition, c.referenceDataset.metadata.version, c.referenceDataset.metadata.isDemo ? DEMO_WARNING : c.warnings.join(' | '), c.calculatedAt, c.sharedConditions.surfaceType, c.sharedConditions.area, c.sharedConditions.orientation, c.sharedConditions.latitude, c.sharedConditions.month, c.sharedConditions.startHour, c.sharedConditions.endHour, c.sharedConditions.indoorTemperature, c.sharedConditions.outdoorDesignTemperature, c.sharedConditions.dailyRange, c.sharedConditions.averageOutdoorTemperature, c.sharedConditions.negativeHandling, c.baselineId, [...c.assumptions, ...c.warnings].join(' | ')]
   const headers = hourly ? ['Material', 'Material ID', `U (${unit.u})`, 'Group', 'Hour', `Base CLTD (${unit.difference})`, `LM (${unit.difference})`, 'K', `Indoor correction (${unit.difference})`, `Outdoor correction (${unit.difference})`, `Raw CLTD (${unit.difference})`, `Applied CLTD (${unit.difference})`, `Load (${unit.load})`, 'Clamped'] : ['Rank', 'Material', 'Material ID', `U (${unit.u})`, 'Group', 'K', `Peak (${unit.load})`, 'Peak hour', `Average (${unit.load})`, `Difference (${unit.load})`, 'Difference (%)']

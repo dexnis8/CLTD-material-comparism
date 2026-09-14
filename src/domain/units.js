@@ -20,3 +20,24 @@ export function changeProjectUnits(project, to) {
   shared.dailyRange = convert(shared.dailyRange, 'difference', from, to)
   return { ...project, shared, materials: project.materials.map(m => ({ ...m, uValue: convert(m.uValue, 'u', from, to) })) }
 }
+
+export const LOAD_UNITS = { kW: 'kW', tons: 'Tons', btu: 'Btu/hr' }
+
+export function convertLoad(value, unitSystem, outputUnit = 'kW') {
+  if (!(outputUnit in LOAD_UNITS)) throw new Error('Unsupported load unit.')
+  const watts = convert(value, 'load', unitSystem, 'SI')
+  if (outputUnit === 'kW') return watts / 1000
+  const btuPerHour = convert(watts, 'load', 'SI', 'IP')
+  return outputUnit === 'tons' ? btuPerHour / 12000 : btuPerHour
+}
+
+export function resultsInLoadUnit(calculation, outputUnit = 'kW') {
+  const load = value => convertLoad(value, calculation.sharedConditions.unitSystem, outputUnit)
+  return calculation.results.map(result => ({
+    ...result,
+    peakLoad: load(result.peakLoad),
+    averageLoad: load(result.averageLoad),
+    differenceFromBaseline: load(result.differenceFromBaseline),
+    hourlyResults: result.hourlyResults.map(hour => ({ ...hour, conductionLoad: load(hour.conductionLoad) })),
+  }))
+}

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { correctedCLTD, compareMaterials, calcMaterialConductionLoad, validateInputs, conductionLoad } from '../domain/calculations'
 import { getBaseCLTD, getLatitudeMonthCorrection, validateDataset, parseStrictJSON } from '../domain/reference'
-import { changeProjectUnits, convert } from '../domain/units'
+import { changeProjectUnits, convert, convertLoad } from '../domain/units'
 import { createProject, demoDataset } from '../data/demo'
 import { csv, datasetCSV, importDataset, parseCSV, readProject, reportCSV } from '../services/files'
 
@@ -82,5 +82,24 @@ describe('units and transport', () => {
   it('protects formula cells', () => expect(csv([['=HYPERLINK("x")', -4]])).toContain("'=HYPERLINK"))
   it('project round-trip recomputes tampered results', () => { const { p, d } = fixture(); p.calculation = compareMaterials(p.materials, p.shared, d); p.calculation.results[0].peakLoad = 99999; const loaded = readProject(JSON.stringify(p)); expect(loaded.calculation.results[0].peakLoad).toBe(240); expect(loaded.schemaVersion).toBe(1) })
   it('rejects unknown project schema', () => expect(() => readProject('{"schemaVersion":2}')).toThrow('schema'))
-  it('exports full precision and demo provenance in summary and hourly CSV', () => { const { p, d } = fixture(); const c = compareMaterials(p.materials, p.shared, d); const summary = parseCSV(reportCSV(c)), hourly = parseCSV(reportCSV(c, true)); expect(summary.length).toBe(2); expect(hourly.length).toBe(6); expect(summary[0].Warning).toContain('not for engineering design'); expect(hourly[0]['Load (W)']).toBe('100'); expect(hourly[0]['Area (m²)']).toBe('20') })
+  it('exports full precision and demo provenance in summary and hourly CSV', () => { const { p, d } = fixture(); const c = compareMaterials(p.materials, p.shared, d); const summary = parseCSV(reportCSV(c)), hourly = parseCSV(reportCSV(c, true)); expect(summary.length).toBe(2); expect(hourly.length).toBe(6); expect(summary[0].Warning).toContain('not for engineering design'); expect(hourly[0]['Load (kW)']).toBe('0.1'); expect(hourly[0]['Area (m²)']).toBe('20') })
+})
+
+describe('result load units', () => {
+  it('defaults watts to kilowatts and handles imperial input', () => {
+    expect(convertLoad(1000, 'SI')).toBe(1)
+    expect(convertLoad(12000, 'IP')).toBeCloseTo(3.516852842, 8)
+    expect(convertLoad(12000, 'IP', 'tons')).toBeCloseTo(1, 12)
+    expect(convertLoad(1000, 'SI', 'btu')).toBeCloseTo(3412.141633, 6)
+    expect(convertLoad(-1000, 'SI')).toBe(-1)
+    expect(convertLoad(0, 'SI', 'tons')).toBe(0)
+  })
+  it('exports selected units without modifying the calculation', () => {
+    const { p, d } = fixture()
+    const c = compareMaterials(p.materials, p.shared, d)
+    const original = structuredClone(c)
+    expect(Number(parseCSV(reportCSV(c, false, 'btu'))[0]['Peak (Btu/hr)'])).toBeCloseTo(240 * 3.412141633)
+    expect(Number(parseCSV(reportCSV(c, true, 'tons'))[0]['Load (Tons)'])).toBeCloseTo(100 * 3.412141633 / 12000)
+    expect(c).toEqual(original)
+  })
 })
