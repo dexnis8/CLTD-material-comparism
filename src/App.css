@@ -23,3 +23,12 @@
 .user-guide .formula-box{margin-bottom:20px}
 .user-guide .formula-box p{margin:12px 0 0}
 @media(max-width:550px){.guide-intro,.guide-body{padding:18px}.guide-body{padding-top:0}.guide-steps{padding-left:36px;padding-right:18px}.guide-intro h2{font-size:22px}}
+.error-content { min-width: 0; flex: 1; overflow-wrap: anywhere; }
+.validation-errors { align-items: flex-start; }
+.validation-errors ol { padding-left: 1.4rem; }
+.validation-errors li + li { margin-top: 1.25rem; }
+.validation-errors li p { margin: .4rem 0; line-height: 1.65; }
+.validation-errors .action-row { margin-top: 1rem; flex-wrap: wrap; }
+.recovery-screen { max-width: 900px; margin: 3rem auto; padding: 1rem; }
+.recovery-screen p, .recovery-screen li { margin: 1rem 0; }
+.recovery-screen pre { white-space: pre-wrap; overflow-wrap: anywhere; }

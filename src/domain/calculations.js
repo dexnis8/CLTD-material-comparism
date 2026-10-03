@@ -8,7 +8,7 @@ export const DARK_FACTOR = 1.0
 export const LIGHT_FACTOR = 0.65
 export function correctedCLTD({ baseCLTD, latitudeMonthCorrection, colorFactor, indoorTemperature, averageOutdoorTemperature, unitSystem, negativeHandling = 'preserve' }) {
   const reference = REFERENCE_TEMPERATURES[unitSystem]
-  if (!reference) throw new Error('Unsupported calculation units.')
+  if (!reference) throw new Error('Unsupported calculation units. To fix: open Comparison setup > Unit system and select SI (metric) or IP (imperial), then select matching tables in Reference data and run again.')
   const indoorCorrection = reference.indoor - indoorTemperature
   const outdoorCorrection = averageOutdoorTemperature - reference.outdoor
   const rawCorrectedCLTD = (baseCLTD + latitudeMonthCorrection) * colorFactor + indoorCorrection + outdoorCorrection
@@ -22,42 +22,42 @@ export function findPeak(hourlyResults) {
 }
 export function validateInputs(materials, shared, dataset) {
   const errors = []
-  if (!shared || !Array.isArray(materials)) return ['Shared conditions and a material array are required.']
-  if (!dataset) return ['Select a reference dataset.']
+  if (!shared || typeof shared !== 'object' || Array.isArray(shared) || !Array.isArray(materials) || materials.some(m => !m || typeof m !== 'object' || Array.isArray(m))) return ['The project is missing valid comparison inputs or assemblies. To fix: open Settings > Import project JSON and load a valid backup, or export a backup before using New / reset project to re-enter your inputs.']
+  if (!dataset) return ['No active reference dataset was found. To fix: open Reference data > Reference library and select a dataset matching your units and site. Use Import dataset if your verified tables are not listed, then Run comparison.']
   errors.push(...validateDataset(dataset))
-  if (materials.length < 2) errors.push('Add at least two materials.')
-  for (const [key, label] of Object.entries({ area: 'Surface area', indoorTemperature: 'Indoor temperature', outdoorDesignTemperature: 'Outdoor design temperature', dailyRange: 'Daily temperature range', averageOutdoorTemperature: 'Average outdoor temperature', latitude: 'Latitude' })) {
-    if (typeof shared[key] !== 'number' || !Number.isFinite(shared[key])) errors.push(`${label} is required and must be numeric.`)
+  if (materials.length < 2) errors.push('At least two assemblies are needed to compare loads. To fix: open Materials > Add assembly, enter Assembly name, U-value and Reference group, then Save assembly. Repeat until there are at least two assemblies, then Run comparison.')
+  for (const [key, label] of Object.entries({ area: 'Surface area', indoorTemperature: 'Indoor dry-bulb', outdoorDesignTemperature: 'Outdoor dry-bulb', dailyRange: 'Daily range', averageOutdoorTemperature: 'Outdoor average', latitude: 'Site latitude' })) {
+    if (typeof shared[key] !== 'number' || !Number.isFinite(shared[key])) errors.push(`Comparison setup > ${label} is missing or is not a finite number (received: ${JSON.stringify(shared[key])}). To fix: enter a numeric value in this field using the displayed units, then Run comparison.`)
   }
-  if (shared.area <= 0) errors.push('Surface area must be greater than zero.')
-  if (shared.dailyRange < 0) errors.push('Daily temperature range cannot be negative.')
-  if (Math.abs(shared.latitude) > 90) errors.push('Latitude must be between -90° and 90°.')
-  if (!Number.isInteger(shared.month) || shared.month < 1 || shared.month > 12) errors.push('Select a valid month.')
-  if (!['SI', 'IP'].includes(shared.unitSystem) || dataset.metadata?.unitSystem !== shared.unitSystem) errors.push('Dataset units must match the comparison units. Import a matching dataset.')
-  if (!['Wall', 'Roof'].includes(shared.surfaceType)) errors.push('Select Wall or Roof.')
-  if (!(shared.surfaceType === 'Roof' ? ['Horizontal'] : ORIENTATIONS).includes(shared.orientation)) errors.push('Orientation is incompatible with surface type.')
-  if (!Number.isInteger(shared.startHour) || !Number.isInteger(shared.endHour) || shared.startHour < 0 || shared.endHour > 23 || shared.startHour > shared.endHour) errors.push('Hours must be integers from 0 to 23, with start ≤ end. Overnight ranges must be split.')
-  if (!['preserve', 'clamp'].includes(shared.negativeHandling)) errors.push('Select a valid negative-load handling option.')
-  if (materials.filter(m => m.isBaseline).length !== 1) errors.push('Select exactly one baseline material.')
-  if (new Set(materials.map(m => m.id)).size !== materials.length) errors.push('Material IDs must be unique.')
+  if (shared.area <= 0) errors.push('Comparison setup > Surface area must be greater than zero. To fix: enter the actual wall or roof area in the displayed units, then Run comparison.')
+  if (shared.dailyRange < 0) errors.push('Comparison setup > Daily range cannot be negative. To fix: enter the daily high minus the daily low as zero or a positive number. If you use a derived average, click Derive outdoor average after correcting the range, then Run comparison.')
+  if (Math.abs(shared.latitude) > 90) errors.push('Comparison setup > Location & design period > Site latitude must be between -90° and 90°. To fix: enter decimal degrees, using a minus sign for southern latitudes. Do not enter longitude here. Then Run comparison.')
+  if (!Number.isInteger(shared.month) || shared.month < 1 || shared.month > 12) errors.push('Comparison setup > Design month is invalid. To fix: select your design month (January through December), then Run comparison.')
+  if (!['SI', 'IP'].includes(shared.unitSystem) || dataset.metadata?.unitSystem !== shared.unitSystem) errors.push('Dataset units must match the comparison units. To fix: check Comparison setup > Unit system, then open Reference data > Reference library and select or import tables in that same SI or IP system. Switching project units converts inputs but does not convert reference tables. Do not just relabel a dataset; use values in the correct units, then Run comparison.')
+  if (!['Wall', 'Roof'].includes(shared.surfaceType)) errors.push('Comparison setup > Surface type is invalid. To fix: select Wall or Roof for the surface being compared, then Run comparison.')
+  if (!(shared.surfaceType === 'Roof' ? ['Horizontal'] : ORIENTATIONS).includes(shared.orientation)) errors.push('Comparison setup > Orientation is incompatible with Surface type. To fix: select N, NE, E, SE, S, SW, W or NW for a Wall. For a Roof, select Roof again to set Horizontal automatically, then Run comparison.')
+  if (!Number.isInteger(shared.startHour) || !Number.isInteger(shared.endHour) || shared.startHour < 0 || shared.endHour > 23 || shared.startHour > shared.endHour) errors.push('Comparison setup > Location & design period has an invalid hour range. To fix: set Start hour and End hour to whole numbers from 0 (midnight) to 23 (11 pm), with Start hour no later than End hour. Both endpoints are included. For overnight periods run two comparisons (for example 22–23 and 0–6), exporting each result before changing the period.')
+  if (!['preserve', 'clamp'].includes(shared.negativeHandling)) errors.push('Comparison setup > Negative cooling loads is invalid. To fix: select Preserve to keep outward heat flow as negative values, or Clamp to zero to report no cooling load for those hours, then Run comparison.')
+  if (materials.filter(m => m.isBaseline).length !== 1) errors.push('Exactly one baseline assembly is needed to calculate differences. To fix: open Materials and choose Set as baseline beneath one assembly name, then Run comparison.')
+  if (new Set(materials.map(m => m.id)).size !== materials.length) errors.push('Assemblies share an internal ID and cannot be distinguished. To fix: export a backup in Settings > Export project JSON, give every materials[].id a different non-empty string in that file, and reimport through Settings > Import project JSON.')
   for (const material of materials) {
-    if (!material.id || typeof material.name !== 'string' || !material.name.trim()) errors.push('Each material needs an ID and name.')
-    if (typeof material.uValue !== 'number' || !Number.isFinite(material.uValue) || material.uValue <= 0) errors.push(`${material.name}: U-value must be greater than zero.`)
-    if (!GROUPS.includes(material.groupNumber)) errors.push(`${material.name}: Select a group A–G.`)
-    if (typeof material.colorFactor !== 'number' || !Number.isFinite(material.colorFactor) || material.colorFactor <= 0 || material.colorFactor > 1) errors.push(`${material.name}: Colour factor must be greater than zero and no greater than 1.`)
-    if (!['dark', 'light', 'custom'].includes(material.surfaceColor)) errors.push(`${material.name}: Invalid surface colour.`)
-    if (material.surfaceColor === 'dark' && material.colorFactor !== DARK_FACTOR || material.surfaceColor === 'light' && material.colorFactor !== LIGHT_FACTOR) errors.push(`${material.name}: Colour factor does not match the selected colour.`)
+    if (!material.id || typeof material.name !== 'string' || !material.name.trim()) errors.push('An assembly has no internal ID or name. To fix: open Materials, click its Edit button and enter Assembly name, then Save assembly. For a missing internal ID, export the project from Settings, give materials[].id a unique non-empty string in the JSON file and reimport it.')
+    if (typeof material.uValue !== 'number' || !Number.isFinite(material.uValue) || material.uValue <= 0) errors.push(`Materials > ${material.name || "Unnamed assembly"} > U-value must be a finite number greater than zero. To fix: edit this assembly, enter its verified thermal transmittance (heat transfer per area and temperature difference) in the displayed units, then Save assembly and Run comparison.`)
+    if (!GROUPS.includes(material.groupNumber)) errors.push(`Materials > ${material.name || "Unnamed assembly"} > Reference group is invalid. To fix: edit the assembly and select A–G according to its construction classification in your reference source, then Save assembly and Run comparison.`)
+    if (typeof material.colorFactor !== 'number' || !Number.isFinite(material.colorFactor) || material.colorFactor <= 0 || material.colorFactor > 1) errors.push(`Materials > ${material.name || "Unnamed assembly"} > Custom colour factor K must be a finite number greater than zero and no greater than 1. To fix: edit the assembly and enter a verified factor in that range, or select Dark (1.00) or Light (0.65), then Save assembly and Run comparison.`)
+    if (!['dark', 'light', 'custom'].includes(material.surfaceColor)) errors.push(`Materials > ${material.name || "Unnamed assembly"} > Exterior surface colour is invalid. To fix: edit the assembly and select Dark or Light, or enable advanced custom colour factor and select Custom with a verified value, then Save assembly and Run comparison.`)
+    if (material.surfaceColor === 'dark' && material.colorFactor !== DARK_FACTOR || material.surfaceColor === 'light' && material.colorFactor !== LIGHT_FACTOR) errors.push(`Materials > ${material.name || "Unnamed assembly"}: Colour factor does not match the selected colour. To fix: edit the assembly and select Dark again for K = 1.00 or Light again for K = 0.65. For another verified factor enable Custom. Click Save assembly and Run comparison.`)
   }
   if (!errors.length) {
     try { getLatitudeMonthCorrection({ ...shared, dataset }) } catch (error) { errors.push(error.message) }
     for (const material of materials) for (let hour = shared.startHour; hour <= shared.endHour; hour++) {
-      try { getBaseCLTD({ ...shared, groupNumber: material.groupNumber, hour, dataset }) } catch (error) { errors.push(error.message) }
+      try { getBaseCLTD({ ...shared, groupNumber: material.groupNumber, hour, dataset }) } catch (error) { errors.push(`Assembly "${material.name}": ${error.message}`) }
     }
   }
   return [...new Set(errors)]
 }
 export function calcMaterialConductionLoad(material, sharedConditions, referenceDataset) {
-  if (sharedConditions.unitSystem !== referenceDataset.metadata.unitSystem) throw new Error('Dataset units must match comparison units.')
+  if (sharedConditions.unitSystem !== referenceDataset.metadata.unitSystem) throw new Error('Dataset units must match comparison units. To fix: check Comparison setup > Unit system and select matching tables in Reference data > Reference library, then Run comparison.')
   const lm = getLatitudeMonthCorrection({ ...sharedConditions, dataset: referenceDataset })
   const hourlyResults = []
   for (let hour = sharedConditions.startHour; hour <= sharedConditions.endHour; hour++) {

@@ -2,6 +2,16 @@
 
 export default function UserGuide({ onNavigate }) {
   return <div className="user-guide">
+    <section className="panel">
+      <SectionTitle eyebrow="Troubleshooting" title="When a comparison or file will not load" />
+      <div className="guide-body"><p>Each error explains the affected input or file entry and gives a <strong>How to resolve</strong> guide. Use its Open buttons to reach the relevant screen. After correcting the issue, select <strong>Run comparison</strong> or retry the import to check again.</p>
+        <h3>Missing LM: 7.38° / month 3 / W</h3><p>LM means latitude/month correction. This message means the selected dataset has no numeric correction for latitude 7.38°, March, facing west. Adding assemblies does not add reference data. Check <strong>Comparison setup &gt; Site latitude, Design month and Orientation</strong>. If those describe your site correctly, keep them.</p>
+        <p>Open <strong>Reference data &gt; Reference table inspector</strong> and select <strong>LM</strong>. Review the latitude, month and orientation columns. To extend the table, click <strong>Dataset JSON</strong>, edit the downloaded file outside the app, and add a correction from a verified source at <code>lm[7.38][3][W]</code>. Use <strong>Import dataset</strong>, confirm replacement if asked, and run again. Alternatively, select another verified dataset with that coverage. The app does not estimate between latitudes; a nearby latitude or an assumed zero is not a valid fix.</p>
+        <h3>Missing CLTD or mismatched units</h3><p>CLTD means cooling load temperature difference. Use the <strong>CLTD</strong> inspector to check the group, surface, direction and every selected hour. Verify each assembly’s <strong>Reference group</strong> in Materials. Import missing verified rows when the inputs are correct. Dataset SI/IP units must match <strong>Comparison setup &gt; Unit system</strong>; changing a table’s label does not convert its values.</p>
+        <h3>Import, save or unexpected errors</h3><p>For import errors, correct the named JSON field or CSV record in a copy of the file. CSV record numbers count the header as record 1 and a quoted multiline cell as one record. Reference templates belong in <strong>Reference data &gt; Import dataset</strong>; complete project backups belong in <strong>Settings &gt; Import project JSON</strong>. A rejected import does not replace your current project.</p><p>If saving fails, keep the page open and use <strong>Settings &gt; Export project JSON</strong> first. Confirm the download before reloading or changing browser storage. If recovery starts with a sample project and paused autosave, export the <strong>original storage backup</strong> before restoring a valid project. Resume local saving only once the project you want is visible. For an unexplained error that repeats, send its technical details and the steps that caused it to the app maintainer.</p>
+        <div className="action-row"><Button onClick={() => onNavigate('reference')}>Open reference data</Button><Button onClick={() => onNavigate('settings')}>Open settings</Button></div>
+      </div>
+    </section>
     <section className="panel guide-intro">
       <span className="eyebrow">Start here</span>
       <h2>Your first material comparison</h2>

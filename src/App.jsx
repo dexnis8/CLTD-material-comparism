@@ -1,5 +1,5 @@
-﻿import { useState, useRef } from 'react'
-import { Layers3, SlidersHorizontal, ChartNoAxesCombined, Database, FileText, Settings2, ChevronRight, Check, Menu, X, ArrowUpRight, Play, Download, Upload, RotateCcw, AlertTriangle, BookOpen, Plus } from 'lucide-react'
+﻿import { useState, useRef, useEffect } from 'react'
+import { Layers3, SlidersHorizontal, ChartNoAxesCombined, Database, FileText, Settings2, ChevronRight, Check, Menu, ArrowUpRight, Play, Download, Upload, RotateCcw, AlertTriangle, BookOpen, Plus } from 'lucide-react'
 import { APP_NAME, DEMO_WARNING, STORAGE_KEY } from './app/config'
 import { useProject } from './hooks/useProject'
 import { compareMaterials, comparisonFingerprint, validateInputs } from './domain/calculations'
@@ -12,6 +12,8 @@ import Materials from './features/materials/Materials'
 import Results from './features/comparison/Results'
 import ReferenceData from './features/reference-data/ReferenceData'
 import UserGuide from './features/guide/UserGuide'
+import ErrorNotice from './components/ErrorNotice'
+import { operationError } from './services/errors'
 import './App.css'
 
 const navigation = [
@@ -28,6 +30,15 @@ export default function App() {
   const [page, setPage] = useState('setup')
   const [mobileNav, setMobileNav] = useState(false)
   const [errors, setErrors] = useState([])
+  useEffect(() => {
+    const handleError = event => {
+      setErrors([operationError('The last action', event.error || event.reason || event.message, 'Export a backup in Settings > Export project JSON, then retry the action. If it repeats, reload the app and share the details below and your steps with the app maintainer. Do not clear browser storage.')])
+      window.scrollTo(0, 0)
+    }
+    window.addEventListener('error', handleError)
+    window.addEventListener('unhandledrejection', handleError)
+    return () => { window.removeEventListener('error', handleError); window.removeEventListener('unhandledrejection', handleError) }
+  }, [])
   const [message, setMessage] = useState('')
   const [confirm, setConfirm] = useState(null)
   const [showMethod, setShowMethod] = useState(false)
@@ -36,20 +47,26 @@ export default function App() {
   const stale = Boolean(project.calculation && project.calculation.fingerprint !== comparisonFingerprint(project.materials, project.shared, dataset))
   const navigate = id => { setPage(id); setMobileNav(false); setErrors([]); setMessage(''); window.scrollTo(0, 0) }
   const run = () => {
-    const issues = validateInputs(project.materials, project.shared, dataset)
-    setErrors(issues); setMessage('')
-    if (issues.length) { window.scrollTo(0, 0); return }
-    try { setProject({ ...project, calculation: compareMaterials(project.materials, project.shared, dataset) }); setPage('results'); window.scrollTo(0, 0) } catch (error) { setErrors([error.message]) }
+    try {
+      const issues = validateInputs(project.materials, project.shared, dataset)
+      setErrors(issues); setMessage('')
+      if (issues.length) { window.scrollTo(0, 0); return }
+      setProject({ ...project, calculation: compareMaterials(project.materials, project.shared, dataset) })
+      setPage('results'); window.scrollTo(0, 0)
+    } catch (error) {
+      setErrors([operationError('Comparison', error, 'Follow the input or reference-data guidance below, then Run comparison again. If no field is identified, export a project backup in Settings and report the details to the app maintainer.')])
+      window.scrollTo(0, 0)
+    }
   }
   const askReset = sample => setConfirm({ title: sample ? 'Load the sample project?' : 'Create a new comparison?', text: 'This replaces the current project in local storage. Export your project first if you want to keep it.', action: () => { setProject(createProject(sample)); navigate('setup') } })
   const importProject = async event => {
     const file = event.target.files[0]
     if (!file) return
     try {
-      if (file.size > 20_000_000) throw new Error('Project files must be smaller than 20 MB.')
+      if (file.size > 20_000_000) throw new Error('This project file exceeds the 20 MB limit. To fix: choose a smaller project export in Settings > Import project JSON. Work on a copy of the file: remove unneeded datasets while retaining the active dataset, or set calculation to null to remove the old result snapshot; keep shared inputs and materials. Save and retry.')
       const incoming = readProject(await file.text())
       setConfirm({ title: 'Load imported project?', text: `Replace the current project with “${incoming.name}”? Export your current project first to keep a backup.`, action: () => { setProject(incoming); navigate('setup') } })
-    } catch (error) { setErrors([error.message]) }
+    } catch (error) { setErrors([operationError(`Import of project ${file.name}`, error, 'Your current project has not been replaced. Check that the file is accessible on this device, follow the details below and retry Settings > Import project JSON.')]); window.scrollTo(0, 0) }
     event.target.value = ''
   }
   const updateShared = shared => setProject({ ...project, shared })
@@ -61,8 +78,8 @@ export default function App() {
       <div className="dataset-banner"><div><Database size={17} /><span><strong>{dataset.metadata.isDemo ? 'Demonstration reference' : 'Active reference'}</strong><span className="dataset-banner-name"> · {dataset.metadata.name}</span></span></div><button className="no-print" onClick={() => navigate('reference')}>Manage dataset <ArrowUpRight size={15} /></button></div>
       {dataset.metadata.isDemo && <div className="demo-warning"><AlertTriangle size={15} /><span>{DEMO_WARNING}. Import verified reference tables before engineering use.</span></div>}
       {project.calculation?.referenceDataset.metadata.isDemo && !dataset.metadata.isDemo && ['results', 'reports'].includes(page) && <div className="notice warning">Result snapshot: {DEMO_WARNING}</div>}
-      {storageError && <div className="notice error" role="alert">{storageError}</div>}
-      {errors.length > 0 && <div className="notice error validation-errors" role="alert"><div><strong>Resolve {errors.length} issue{errors.length === 1 ? '' : 's'} to continue</strong><ul>{errors.map((error, i) => <li key={`${error}-${i}`}>{error}</li>)}</ul></div><Button variant="icon-button ghost" aria-label="Dismiss errors" onClick={() => setErrors([])}><X size={17} /></Button></div>}
+      {storageError && <ErrorNotice errors={[storageError]} onNavigate={navigate} />}
+      {errors.length > 0 && <ErrorNotice errors={errors} onNavigate={id => { setPage(id); setMobileNav(false); window.scrollTo(0, 0) }} onDismiss={() => setErrors([])} />}
       {message && <div className="notice success" role="status">{message}</div>}
       {page === 'setup' && <><div className="project-strip"><div><span className="eyebrow">Current project</span><h2>{project.name}</h2></div><Button variant="ghost" onClick={() => navigate('settings')}>Project details <ChevronRight size={16} /></Button></div><div className="setup-grid"><SharedConditions shared={project.shared} onChange={updateShared} onUnits={unit => setProject(changeProjectUnits(project, unit))} /><div className="setup-main"><Materials materials={project.materials} unitSystem={project.shared.unitSystem} hasResults={Boolean(project.calculation)} onChange={updateMaterials} /><section className="method-card"><div className="method-copy"><span className="eyebrow">A transparent calculation</span><h2>From assembly to hourly load.</h2><p>Each reference profile is corrected for your design conditions, then multiplied by U-value and the shared surface area.</p><button className="text-link" onClick={() => setShowMethod(true)}>Explore the calculation method <ArrowUpRight size={15} /></button></div><div className="method-formula"><span>Conduction cooling load</span><strong>Q = U × A × CLTD<sub>c</sub></strong><div><span>Assembly</span><span>Shared area</span><span>Corrected profile</span></div></div></section><section className="ready-panel"><div><span className="eyebrow">03 / Compare the outcome</span><h2>The peak is only half the story.</h2><p>See how much heat passes through each assembly — and when. Run your comparison to reveal the hourly profiles, ranked peaks and full calculation audit.</p></div><Button variant="primary" onClick={run}>Run comparison <ChevronRight size={16} /></Button>{project.calculation && <Button onClick={() => navigate('results')}>View {stale ? 'previous' : 'current'} results</Button>}</section><div className="scope-note"><BookOpen size={18} /><p><strong>Focused by design.</strong> This tool compares conduction through a single opaque wall or roof. It does not calculate the total building cooling load.</p></div></div></div></>}
       {page === 'guide' && <UserGuide onNavigate={navigate} />}

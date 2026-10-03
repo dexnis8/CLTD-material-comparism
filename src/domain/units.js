@@ -4,12 +4,12 @@ export const UNITS = {
 }
 export function convert(value, kind, from, to) {
   if (value === '') return ''
-  if (!['SI', 'IP'].includes(from) || !['SI', 'IP'].includes(to)) throw new Error('Unsupported conversion units.')
+  if (!['SI', 'IP'].includes(from) || !['SI', 'IP'].includes(to)) throw new Error('Unsupported conversion units. To fix: open Comparison setup > Unit system and select SI or IP. If this repeats, export a backup in Settings and report this message and the action to the app maintainer.')
   if (from === to) return value
   const siToIp = from === 'SI'
   if (kind === 'temperature') return siToIp ? value * 1.8 + 32 : (value - 32) / 1.8
   const factors = { area: 10.76391041671, u: 0.1761101838, difference: 1.8, load: 3.412141633 }
-  if (!(kind in factors)) throw new Error(`Unknown conversion: ${kind}`)
+  if (!(kind in factors)) throw new Error(`Unknown conversion: ${kind}. To fix: export a backup in Settings, reload and retry. If this repeats, report this message and the action to the app maintainer.`)
   return siToIp ? value * factors[kind] : value / factors[kind]
 }
 export function changeProjectUnits(project, to) {
@@ -24,7 +24,7 @@ export function changeProjectUnits(project, to) {
 export const LOAD_UNITS = { kW: 'kW', tons: 'Tons', btu: 'Btu/hr' }
 
 export function convertLoad(value, unitSystem, outputUnit = 'kW') {
-  if (!(outputUnit in LOAD_UNITS)) throw new Error('Unsupported load unit.')
+  if (!(outputUnit in LOAD_UNITS)) throw new Error('Unsupported load unit. To fix: open Results > Result unit and select kW, Tons (refrigeration) or Btu/hr, then retry.')
   const watts = convert(value, 'load', unitSystem, 'SI')
   if (outputUnit === 'kW') return watts / 1000
   const btuPerHour = convert(watts, 'load', 'SI', 'IP')

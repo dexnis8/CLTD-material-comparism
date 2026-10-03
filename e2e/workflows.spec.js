@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { Buffer } from 'node:buffer'
 
 async function navigate(page, label) {
   if (await page.getByRole('button', { name: 'Open navigation' }).isVisible()) await page.getByRole('button', { name: 'Open navigation' }).click()
@@ -93,6 +94,85 @@ test('reference templates import in JSON and CSV; missing combinations block', a
   await page.getByRole('button', { name: 'IP · Imperial' }).click()
   await page.getByRole('button', { name: 'Run comparison', exact: true }).first().click()
   await expect(page.getByRole('alert')).toContainText('Dataset units must match')
+})
+
+test('missing LM explains the site and keeps guidance while navigating to the fix', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 900 })
+  await page.goto('/')
+  await page.getByLabel('Site latitude').fill('7.38')
+  await page.getByLabel('Design month').selectOption('3')
+  await page.getByRole('button', { name: 'Run comparison', exact: true }).first().click()
+  const alert = page.getByRole('alert', { name: 'Issues to resolve' })
+  for (const text of ['latitude/month correction', '7.38°', 'March (month 3)', 'west (W)', 'How to resolve:', 'lm[7.38][3][W]', 'Do not change the real site latitude']) await expect(alert).toContainText(text)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)).toBe(false)
+  await alert.getByRole('button', { name: 'Open Reference data', exact: true }).click()
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Reference data')
+  await expect(alert).toContainText('7.38°')
+  await page.getByLabel('Reference table type').selectOption('LM')
+  await alert.getByRole('button', { name: 'Open Comparison setup', exact: true }).click()
+  // Restore the sample's real inputs for this test; never substitute them for a real site.
+  await page.getByLabel('Site latitude').fill('40')
+  await page.getByLabel('Design month').selectOption('7')
+  await page.getByRole('button', { name: 'Run comparison', exact: true }).first().click()
+  await expect(page.locator('.result-hero')).toBeVisible()
+  await expect(page.getByRole('alert')).toHaveCount(0)
+})
+
+test('invalid imports explain recovery and preserve the current project', async ({ page }) => {
+  await page.goto('/')
+  await navigate(page, 'Settings')
+  await page.getByLabel('Project name', { exact: true }).fill('Keep my project')
+  await page.getByLabel('Import project JSON', { exact: true }).setInputFiles({ name: 'broken.json', mimeType: 'application/json', buffer: Buffer.from('null') })
+  const alert = page.getByRole('alert')
+  await expect(alert).toContainText('broken.json')
+  await expect(alert).toContainText('Expected a project object')
+  await expect(alert).toContainText('How to resolve:')
+  await expect(page.getByLabel('Project name', { exact: true })).toHaveValue('Keep my project')
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  await navigate(page, 'Reference data')
+  await page.getByLabel('Import reference dataset').setInputFiles({ name: 'broken.csv', mimeType: 'text/csv', buffer: Buffer.from('table,value\nLM,2') })
+  await expect(page.getByRole('alert')).toContainText('Missing CSV column: id')
+  await expect(page.getByRole('alert')).toContainText('CSV template')
+  await expect(page.locator('.dataset-item')).toHaveCount(1)
+})
+
+test('assembly fields explain why saving is disabled', async ({ page }) => {
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Add assembly', exact: true }).click()
+  await page.getByLabel('Assembly name', { exact: true }).fill(' ')
+  await page.getByLabel('U-value', { exact: false }).fill('0')
+  await expect(page.getByRole('dialog')).toContainText('Assembly name is blank')
+  await expect(page.getByRole('dialog')).toContainText('thermal transmittance')
+  await expect(page.getByRole('button', { name: 'Save assembly' })).toBeDisabled()
+  await page.getByLabel('Enable advanced custom colour factor').check()
+  await page.getByRole('button', { name: 'Custom', exact: true }).click()
+  await page.getByLabel('Custom colour factor K').fill('2')
+  await expect(page.getByRole('dialog')).toContainText('no greater than 1')
+})
+
+test('storage failures explain backup and protect unreadable saved data', async ({ page }) => {
+  await page.addInitScript(() => { localStorage.setItem('thermacompare.project.v1', '{broken') })
+  await page.goto('/')
+  await expect(page.getByRole('alert')).toContainText('autosave is paused')
+  await expect(page.getByRole('alert')).toContainText('Export original storage backup')
+  await expect(page.getByRole('status')).toContainText('Autosave paused')
+  expect(await page.evaluate(() => localStorage.getItem('thermacompare.project.v1'))).toBe('{broken')
+  await page.getByRole('alert').getByRole('button', { name: 'Open Settings', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'Export original storage backup', exact: true })).toBeVisible()
+})
+
+test('failed downloads and saves offer recovery without claiming success', async ({ page }) => {
+  await page.addInitScript(() => {
+    Storage.prototype.setItem = () => { throw new DOMException('Storage quota exceeded', 'QuotaExceededError') }
+  })
+  await page.goto('/')
+  await expect(page.getByRole('alert')).toContainText('Recent changes are only in this open page')
+  await expect(page.getByRole('status')).toContainText('Not saved')
+  await navigate(page, 'Settings')
+  await page.evaluate(() => { URL.createObjectURL = () => { throw new Error('Download blocked for test') } })
+  await page.getByRole('button', { name: 'Export project JSON', exact: true }).click()
+  await expect(page.getByRole('alert').filter({ hasText: 'Download of thermacompare-project.json' })).toContainText('Allow downloads for this site')
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Settings')
 })
 
 for (const width of [1440, 1024, 768, 390]) {
